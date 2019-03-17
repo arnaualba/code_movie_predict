@@ -1,4 +1,6 @@
 """
+This code is almost entirely copied from https://gist.github.com/SohierDane/4a84cb96d220fc4791f52562be37968b
+
 Pull movie metadata from the https://www.themoviedb.org API.
 
 Requires an API key stored in a .config file

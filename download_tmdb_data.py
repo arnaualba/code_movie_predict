@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 """
 This code is almost entirely copied from https://gist.github.com/SohierDane/4a84cb96d220fc4791f52562be37968b
 
@@ -41,6 +44,12 @@ MAX_ATTEMPTS = 3
 RATE_LIMITER_DELAY_SECONDS = 10
 RATE_LIMIT_EXCEEDED_STATUS_CODE = 429
 SUCCESSFUL_CALL_STATUS_CODE = 200
+
+data_folder = './data2/'
+if os.path.exists(data_folder):
+  print(data_folder, ' already exists, please choose a different folder name')
+  exit()
+os.popen('mkdir ' + data_folder) 
 
 CATEGORY_SPECIFIC_CALLS = {
     'movie': '&append_to_response=credits,keywords',
@@ -121,7 +130,6 @@ def download_id_list_as_csv(category):
         id_list = []
         for line in f_open:
           id_list.append(line.decode('utf-8'))
-        #~ id_list = f_open.readlines().decode('utf-8')
     # original 'json' is malformed, is actually one dict per line
     ids = pd.DataFrame([json.loads(x) for x in id_list])
     # some entries in the movie id list appear to be collections rather than movies
@@ -131,13 +139,13 @@ def download_id_list_as_csv(category):
     # You have to drop adult films if you want to post any new data to Kaggle.
     if 'adult' in ids.columns:
         ids = ids[~ids['adult']].copy()
-    ids.to_csv(category + '_ids.csv', index=False)
+    ids.to_csv(data_folder + category + '_ids.csv', index=False)
 
 
 def load_id_list(category):
-    if not os.path.exists(category + '_ids.csv'):
+    if not os.path.exists(data_folder + category + '_ids.csv'):
         download_id_list_as_csv(category)
-    df = pd.read_csv(category + '_ids.csv')
+    df = pd.read_csv(data_folder + category + '_ids.csv')
     return df.id.values.tolist()
 
 
@@ -173,14 +181,14 @@ def export_data(category, all_entries):
         x['keywords'] if 'keywords' in x else [])
     for column in JSON_COLUMNS:
         df[column] = df[column].apply(json.dumps)
-    needs_header = not(os.path.exists(category + '_data.csv'))
-    df.to_csv(category + '_data.csv', index=False, mode='a+', header=needs_header)
-    credits.to_csv(category + '_credits.csv', index=False, mode='a+', header=needs_header)
+    needs_header = not(os.path.exists(data_folder + category + '_data.csv'))
+    df.to_csv(data_folder + category + '_data.csv', index=False, mode='a+', header=needs_header)
+    credits.to_csv(data_folder + category + '_credits.csv', index=False, mode='a+', header=needs_header)
 
 
 def download_ids(category, id_list):
-    if os.path.exists(category + '_data.csv'):
-        existing_ids = pd.read_csv(category + '_data.csv', usecols=['id'], dtype=object)
+    if os.path.exists(data_folder + category + '_data.csv'):
+        existing_ids = pd.read_csv(data_folder + category + '_data.csv', usecols=['id'], dtype=object)
         set(existing_ids.id.values.tolist())
         id_list = [x for x in id_list if str(x) not in existing_ids]
     counter = 0

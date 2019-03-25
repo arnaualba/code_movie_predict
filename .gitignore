@@ -1,3 +1,4 @@
 *.csv
 *.tsv
 *.txt
+.ipynb_checkpoints

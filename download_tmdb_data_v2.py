@@ -36,8 +36,7 @@ from io import BytesIO
 from time import sleep
 
 
-BASE_API_CALL = 'https://api.themoviedb.org/3/{category}/{entry_id}?api_key={api_key}{category_specifics}'
-CATEGORIES = ['movie']
+BASE_API_CALL = 'https://api.themoviedb.org/3/movie/{entry_id}?api_key={api_key}{category_specifics}'
 DOWNLOADS_PER_DISK_WRITE = 40
 MAX_DOWNLOADS_PER_SECOND = 4
 MAX_ATTEMPTS = 3
@@ -146,6 +145,9 @@ def load_id_list(category):
     if not os.path.exists(data_folder + category + '_ids.csv'):
         download_id_list_as_csv(category)
     df = pd.read_csv(data_folder + category + '_ids.csv')
+    mv = pd.read_csv('../full_data.csv')
+    df = df[df['original_title'].isin(mv['primaryTitle'])]
+    df.to_csv(path_or_buf = data_folder + category + '_ids.csv')
     return df.id.values.tolist()
 
 
@@ -209,8 +211,7 @@ def download_ids(category, id_list):
 
 
 def download_all_data():
-    for category in CATEGORIES:
-        download_ids(category, load_id_list(category))
+    download_ids('movie', load_id_list('movie'))
 
 
 if __name__ == '__main__':

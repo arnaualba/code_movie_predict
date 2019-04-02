@@ -6,6 +6,8 @@ This code is almost entirely copied from https://gist.github.com/SohierDane/4a84
 
 Pull movie metadata from the https://www.themoviedb.org API.
 
+It only pulls movies that are already in the database full_data.csv
+
 Requires an API key stored in a .config file
 i.e. you must have a file .config in the same directory as 
 this script, with the following content:
@@ -45,13 +47,12 @@ RATE_LIMIT_EXCEEDED_STATUS_CODE = 429
 SUCCESSFUL_CALL_STATUS_CODE = 200
 
 data_folder = '../data2/'
-if os.path.exists(data_folder):
-  print(data_folder, ' already exists, please choose a different folder name')
-  exit()
-os.popen('mkdir ' + data_folder) 
+if not (os.path.exists(data_folder)):
+    os.popen('mkdir ' + data_folder)   
 
 CATEGORY_SPECIFIC_CALLS = {
-    'movie': '&append_to_response=credits,keywords',
+    #~ 'movie': '&append_to_response=credits,keywords',
+    'movie': '&append_to_response=keywords',
                             }
 
 JSON_COLUMNS = {
@@ -66,7 +67,6 @@ KEYS_TO_DROP = {
     'adult',
     'backdrop_path',
     'belongs_to_collection',
-    'imdb_id',
     'poster_path',
     'profile_path',
     'video',
@@ -100,7 +100,7 @@ def make_detail_request(category, entry_id):
     if category in CATEGORY_SPECIFIC_CALLS:
         category_specifics = CATEGORY_SPECIFIC_CALLS[category]
     call_url = BASE_API_CALL.format(
-        category=category,
+        #~ category=category,
         entry_id=entry_id,
         api_key=API_KEY,
         category_specifics=category_specifics,
@@ -135,15 +135,11 @@ def download_id_list_as_csv(category):
     if 'original_title' in ids.columns:
         ids.original_title = ids.original_title.apply(str)
         ids = ids[~ids.original_title.str.endswith(' Collection')].copy()
-    # You have to drop adult films if you want to post any new data to Kaggle.
-    if 'adult' in ids.columns:
-        ids = ids[~ids['adult']].copy()
     ids.to_csv(data_folder + category + '_ids.csv', index=False)
 
 
 def load_id_list(category):
-    if not os.path.exists(data_folder + category + '_ids.csv'):
-        download_id_list_as_csv(category)
+    download_id_list_as_csv(category)
     df = pd.read_csv(data_folder + category + '_ids.csv')
     mv = pd.read_csv('../full_data.csv')
     df = df[df['original_title'].isin(mv['primaryTitle'])]
@@ -178,14 +174,14 @@ def export_data(category, all_entries):
         df = df[~df.id.isnull()]
     df = df[df.id.apply(lambda x: str(x).isnumeric())]
     # this section about credits is specific to the movie category
-    df, credits = unpack_credits(df)
+    #~ df, credits = unpack_credits(df)
     df['keywords'] = df['keywords'].apply(lambda x:
         x['keywords'] if 'keywords' in x else [])
     for column in JSON_COLUMNS:
         df[column] = df[column].apply(json.dumps)
     needs_header = not(os.path.exists(data_folder + category + '_data.csv'))
     df.to_csv(data_folder + category + '_data.csv', index=False, mode='a+', header=needs_header)
-    credits.to_csv(data_folder + category + '_credits.csv', index=False, mode='a+', header=needs_header)
+    #~ credits.to_csv(data_folder + category + '_credits.csv', index=False, mode='a+', header=needs_header)
 
 
 def download_ids(category, id_list):
